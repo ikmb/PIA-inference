@@ -1,4 +1,4 @@
-#!/Users/heshamelabd/miniconda3/envs/ml_env/bin/python3
+#!/usr/bin/env/python3
 """
 @brief: A Python tool that takes as input the path to a directory containing FASTA files, it reads all the files, fragment them in parallele using a sliding window approach 
 with a step size of 1 and return the generated fragments.
