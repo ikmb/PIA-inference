@@ -1,4 +1,4 @@
-#!/Users/heshamelabd/miniconda3/envs/ml_env/bin/python3
+#!/usr/bin/env python3
 """
 @author: Hesham ElAbd
 @brief: Mixing the list of alleles with the list of input peptides 
