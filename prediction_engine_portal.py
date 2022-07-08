@@ -33,7 +33,7 @@ def parse_user_inputs()->Dict[str,str]:
     """Parse use input and returns a dict containing user parameters 
 
     Returns:
-        Dict[str,str]: a dict containing user provided elements 
+        Dict[str,str]: a dict containing user provided user parameters  
     """
     # Define the parse to parse the results
     #--------------------------------------
@@ -60,6 +60,11 @@ def parse_user_inputs()->Dict[str,str]:
     parser.add_argument('--unmapped_results',
     help="The path to write the unmapped results, defaults to unmapped_results.tsv in the current working directory.",
     default=os.path.join(os.getcwd(),'output/unmapped_results.tsv'),
+    type=str
+    )
+    parser.add_argument('--tissue', 
+    help="The name where peptide presentation to be studied",
+    default="total PBMC",
     type=str
     )
     ## Parse input parameters
@@ -97,16 +102,30 @@ def parse_user_inputs()->Dict[str,str]:
         model_index=args.model_index
     # Check the validity of the output result file 
     if os.access(os.path.dirname(args.output_path), os.W_OK):
-        results_path=os.path.join(os.path.dirname(args.output_path),base_dir.strip('/').split('/')[-1]+'.prediction_results.tsv')
+        if base_dir=='.':
+            results_path=args.output_path
+        else:
+           # print(f"The base dir is: {base_dir}")
+            results_path=os.path.join(os.path.dirname(args.output_path),base_dir.strip('/').split('/')[-1]+'.prediction_results.tsv')
     else:
-        sys.stderr.write(f"{time.ctime()} CRITICAL:: invalid writting path to write the output results, user: {os.getlogin()} does not not have writting access at: {args.output_path}, are you sure the output path is valid. \n")
+        print(f"The provide path is: {args.output_path} and the base directory is: {os.path.dirname(args.output_path)}")
+        sys.stderr.write(f"{time.ctime()} CRITICAL:: invalid writhing path to write the output results, user: {os.getlogin()} does not not have writhing access at: {args.output_path}, are you sure the output path is valid. \n")
         sys.exit(-1) 
     # Check the validity of the output result file 
     if os.access(os.path.dirname(args.unmapped_results), os.W_OK):
-        unmapped_results=os.path.join(os.path.dirname(args.unmapped_results),base_dir.strip('/').split('/')[-1]+'.unmapped_results.tsv')
+        if base_dir==".":
+            unmapped_results=args.unmapped_results
+        else:
+            unmapped_results=os.path.join(os.path.dirname(args.unmapped_results),base_dir.strip('/').split('/')[-1]+'.unmapped_results.tsv')
     else:
         sys.stderr.write(f"{time.ctime()} CRITICAL:: invalid writting path to write the unmapped results, user: {os.getlogin()} does not not have writting access at: {args.unmapped_results}, are you sure the output path is valid. \n")
         sys.exit(-1) 
+    # extract and parse the default tissue name
+    if args.tissue=='-1':
+        tissue='total PBMC'
+    else:
+        tissue=args.tissue
+
     # return the results
     #-------------------
     return {
@@ -114,7 +133,8 @@ def parse_user_inputs()->Dict[str,str]:
         'input':input_path,
         'model_index':model_index,
         'output_path':results_path,
-        'unmapped_results':unmapped_results
+        'unmapped_results':unmapped_results,
+        'tissue':tissue
     }
 
 def load_model(model_index:int)->tf.keras.models.Model:
@@ -132,19 +152,19 @@ def load_model(model_index:int)->tf.keras.models.Model:
           if model_index==0:
                model=create_basic_imformer(maxlen=55,vocab_size=28,embedding_dim=32,num_heads=4,feedforward=64,num_blocks=3)
                model.load_weights('/home/helabd/PIA/assets/PIA_Full_public_only.h5')
-               print(f"{time.ctime()} INFO:: PIA has been loaded")
+               print(f"{time.ctime()} INFO:: PIA-S has been loaded")
           elif model_index==1:
                model=create_basic_imformer(maxlen=55,vocab_size=28,embedding_dim=32,num_heads=4,feedforward=64,num_blocks=3)
                model.load_weights('/home/helabd/PIA/assets/PIA_Full_public_and_inhouse.h5')
-               print(f"{time.ctime()} INFO:: PIA has been loaded")
+               print(f"{time.ctime()} INFO:: PIA-S has been loaded")
           elif model_index==2:
                model=create_subcellular_location_transcription_contexted_dist_to_gly_imformer(maxlen=55,vocab_size=28,embedding_dim=32,num_heads=4,feedforward=64,num_blocks=3) 
                model.load_weights('/home/helabd/PIA/assets/PIA_M_public.h5')
-               print(f"{time.ctime()} INFO:: PIA has been loaded")
+               print(f"{time.ctime()} INFO:: PIA-M has been loaded")
           elif model_index==3:
                model=create_subcellular_location_transcription_contexted_dist_to_gly_imformer(maxlen=55,vocab_size=28,embedding_dim=32,num_heads=4,feedforward=64,num_blocks=3) 
                model.load_weights('/home/helabd/PIA/assets/PIA_M_public_and_inhouse.h5')
-               print(f"{time.ctime()} INFO:: PIA has been loaded")
+               print(f"{time.ctime()} INFO:: PIA-M has been loaded")
           else: 
                raise ValueError(f"{time.ctime()}:: Unsupported model index, current model only support 4 indices,\
                     1 --> PIA-S (public), 2 --> PIA-S (public+inhouse), 3 --> PIA-M (public), 4 --> PIA-M (public+inhouse). while your input is: {model_index}")
@@ -156,7 +176,6 @@ def encode_input_for_pia_s(path2input:str, model_index:int)->Tuple[pd.DataFrame,
     Args:
         path2input (str): The path to load the input file 
         model_index (int): The index of the model to use
-
     Raises:
         IOError: incase reading the file failed (1) or if it contain in correct number of alleles
 
@@ -170,7 +189,11 @@ def encode_input_for_pia_s(path2input:str, model_index:int)->Tuple[pd.DataFrame,
     #------------------------------------------------
     try:
         input_table=pd.read_csv(path2input,sep='\t')
-        if input_table.shape[1]==3:
+        if 'info' in input_table.columns and input_table.shape[1]==3:
+            input_table.columns=['peptide','info','allele']
+        elif 'peptide_index' in input_table.columns and input_table.shape[1]==3:
+            input_table.columns=['peptide','info','allele']
+        elif input_table.shape[1]==3:
             input_table.columns=['peptide','allele','tissue']
         elif input_table.shape[1]==2:
             input_table.columns=['peptide','allele']
@@ -247,7 +270,7 @@ def encode_input_for_pia_s(path2input:str, model_index:int)->Tuple[pd.DataFrame,
             'Phenotype':[phenotype_lookup[pep] for pep in peptides],
             'info':[info_lookup[pep] for pep in peptides]
     })
-    elif 'Phenotype' in input_peptide.columns and 'tissue' not in input_peptide.columns : 
+    elif 'Phenotype' in input_table.columns and 'tissue' not in input_table.columns : 
         # Build a dict to lookup the tissue of the mapped peptides
         #---------------------------------------------------------
         print(f"INFO: {time.ctime()} :: Building a look up table between peptides and phenotype information")
@@ -273,63 +296,67 @@ def encode_input_for_pia_s(path2input:str, model_index:int)->Tuple[pd.DataFrame,
     ## return the results
     return input_peptide,encoded_input,unmapped
      
-def encode_input_for_pia_m(path2input:str)->Tuple[pd.DataFrame,Tuple[np.ndarray,...],pd.DataFrame]:
-     """Prepare and input models to PIA-M architecture
+def encode_input_for_pia_m(path2input:str, tissue=str)->Tuple[pd.DataFrame,Tuple[np.ndarray,...],pd.DataFrame]:
+    """Prepare and input models to PIA-M architecture
 
-     Args:
-         path2input (str): The path to load the input table 
+    Args:
+        path2input (str): The path to load the input table 
 
-     Raises:
-         ValueError: Incase the input table is not TAB seperated or has an incorrect number of tables 
-         IOError: Incase reading or parsing the input table failed
+    Raises:
+        ValueError: Incase the input table is not TAB seperated or has an incorrect number of tables 
+        IOError: Incase reading or parsing the input table failed
 
-     Returns:
-         Tuple[pd.DataFrame,Tuple[np.ndarray,...],pd.DataFrame]: A tuple of three elements, with the following elements:
-         1. pd.DataFrame: a table contain the mapped data  
-         2. Tuple[np.ndarray....] a tuple of six tensors representing the encoded arrays (see OmLiT function for more details).
-         3. pd.DataFrame: a table contain the unmapped dataset 
-     """
+    Returns:
+        Tuple[pd.DataFrame,Tuple[np.ndarray,...],pd.DataFrame]: A tuple of three elements, with the following elements:
+        1. pd.DataFrame: a table contain the mapped data  
+        2. Tuple[np.ndarray....] a tuple of six tensors representing the encoded arrays (see OmLiT function for more details).
+        3. pd.DataFrame: a table contain the unmapped dataset 
+    """
      ### Load the input table of peptides and proteins     
      #------------------------------------------------
-     try:
-          input_table=pd.read_csv(path2input,sep='\t').iloc[:,:2]
-          if input_table.shape[1]==3:
-               input_table.columns=['peptide','allele','tissue']
-               input_table['tissue'].fillna('total PBMC', inplace=True)
-          elif input_table.shape[1]==2:
-               input_table.columns=['peptide','allele']
-               input_table['tissue']=['total PBMC']*input_table.shape[0]
-          else:
-               raise ValueError(f"In correct number of input columns, excepted 2 or 3 columns, however, the input has: {input_table.shape[0]}")
-     except Exception as exp:
-          raise IOError(f"{time.ctime()} CRITICAL:: Reading the input table failed with the following error: {exp}")
-     ## prepare the inputs
-     #--------------------
-     ## input to the annotator engine
-     input2_OmLiT_annotator=(
-          input_table.peptides.to_list(),
-          input_table.allele.to_list(),
-          input_table.tissue.to_list()
-          )
-     ## get the encoded and the un-encoded peptides
-     encoded_tensors,unmapped_data=linker.annotate_and_encode_input_sequences_no_label(
-          input=input2_OmLiT_annotator,max_len=21,proteome=load_proteome(),
-          path2cashed_db='~helabd/PIA/assets/cashed_database.db',
-          path2pseudo_seq='~helabd/PIA/assets/pseudosequence.2016.all.X.dat',
-          only_one_parent_per_peptide=True 
-     )
-     unmapped=input_table.loc[unmapped_data[-1]].copy(deep=True).reset_index(drop=True)
-     mapped=input_table.drop(unmapped_data[-1],axis=0).reset_index(drop=True)     
-     ## return the results
-     #--------------------
-     return (mapped,
-            (tf.data.Dataset.from_tensor_slices(np.concatenate([encoded_tensors[0],encoded_tensors[1]],axis=1)), 
-            np.log10(encoded_tensors[2]+1),
-            encoded_tensors[3],
-            np.log10(encoded_tensors[4]+1),
-            np.log10(encoded_tensors[5]+1)),
-          unmapped
-     )
+    try:
+        input_table=pd.read_csv(path2input,sep='\t')
+        if 'info' in input_table.columns and input_table.shape[1]==3:
+            input_table.columns=['peptide','info','allele']
+            input_table=input_table[['peptide','allele']]
+            input_table['tissue']=[tissue]*input_table.shape[0]
+        if input_table.shape[1]==3:
+            input_table.columns=['peptide','allele','tissue']
+            input_table['tissue'].fillna('total PBMC', inplace=True)
+        elif input_table.shape[1]==2:
+            input_table.columns=['peptide','allele']
+            input_table['tissue']=['total PBMC']*input_table.shape[0]
+        else:
+            raise ValueError(f"In correct number of input columns, excepted 2 or 3 columns, however, the input has: {input_table.shape[0]}")
+    except Exception as exp:
+        raise IOError(f"{time.ctime()} CRITICAL:: Reading the input table failed with the following error: {exp}")
+    ## prepare the inputs
+    #--------------------
+    ## input to the annotator engine
+    input2_OmLiT_annotator=(
+        input_table.peptide.to_list(),
+        input_table.allele.to_list(),
+        input_table.tissue.to_list()
+        )
+    ## get the encoded and the un-encoded peptides
+    encoded_tensors,unmapped_data=linker.annotate_and_encode_input_sequences_no_label(
+        input=input2_OmLiT_annotator,max_len=21,proteome=load_proteome(),
+        path2cashed_db='/home/helabd/PIA/assets/cashed_database.db',
+        path2pseudo_seq='/home/helabd/PIA/assets/pseudosequence.2016.all.X.dat',
+        only_one_parent_per_peptide=True 
+    )
+    unmapped=input_table.loc[unmapped_data[-1]].copy(deep=True).reset_index(drop=True)
+    mapped=input_table.drop(unmapped_data[-1],axis=0).reset_index(drop=True)     
+    ## return the results
+    #--------------------
+    return (mapped,
+        (np.concatenate([encoded_tensors[0],encoded_tensors[1]],axis=1), 
+        np.log10(encoded_tensors[2]+1),
+        encoded_tensors[3],
+        np.log10(encoded_tensors[4]+1),
+        np.log10(encoded_tensors[5]+1)),
+        unmapped
+    )
 
 def load_proteome()->Dict[str,str]:
      """Load the input FASTA
@@ -341,9 +368,21 @@ def load_proteome()->Dict[str,str]:
          Dict[str,str]: a dict containing a map between sequence id and sequence names. 
      """
      results=dict()
-     for seq in SeqIO.parse('~helabd/PIA/assets/filtered_human_sequences_database.fasta','fasta'):
+     for seq in SeqIO.parse('/home/helabd/PIA_INF/assets/filtered_human_sequences_database.fasta','fasta'):
           results[seq.id]=str(seq.seq)
      return results
+
+def map_input_data(sequence, gene_expression, subcellular_location, context, d2g )->Tuple[np.ndarray,...]:
+    """Load the input dataset
+
+    Args:
+        input_data (data): input tensor obtained by a tensorflow dataset
+
+    Returns:
+        Tuple[np.ndarray,...]: A tuple of encoded tensors  
+    """
+    return {"input_1":sequence,
+    "input_2":gene_expression,"input_3":subcellular_location,"input_4":context,"input_5":d2g}
 
 ## Define a callback to log the progress
 #---------------------------------------
@@ -414,18 +453,26 @@ if __name__=='__main__':
             writer_stream.write(f'0,{time.ctime()} Encoding and annotating the input ... \n')
         
         ## generate the encoding for PIA-M
-        mapped_peptides, encoded_input, unmapped_peptide=encode_input_for_pia_m(user_input['input'])
+        mapped_peptides, encoded_tensors, unmapped_peptide=encode_input_for_pia_m(user_input['input'],user_input['tissue'])
         
-        ## create a dataset from the encoded tensor 
-        encoded_input = tf.data.Dataset.from_tensor_slices(encoded_input)
-        encoded_input = encoded_input.batch(25_000)
-
         ## disable AutoShard.
         options = tf.data.Options()
         options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
-        encoded_input = encoded_input.with_options(options)
+        ## build TensorFlow datasets from input tensors
+        #----------------------------------------------
+        input_seq=tf.data.Dataset.from_tensor_slices(encoded_tensors[0])
+        gene_expression=tf.data.Dataset.from_tensor_slices(np.log10(encoded_tensors[1]+1))
+        subcellular_location=tf.data.Dataset.from_tensor_slices(encoded_tensors[2])
+        context_vector=tf.data.Dataset.from_tensor_slices(np.log10(encoded_tensors[3]+1))
+        d2g=tf.data.Dataset.from_tensor_slices(np.log10(encoded_tensors[4]+1))
+    
+        ## combine all input arrays by zipping the input
+        #-----------------------------------------------
+        data_feeder=tf.data.Dataset.zip(
+                    tuple((input_seq,gene_expression,subcellular_location,context_vector,d2g))
+                    ).batch(8192).with_options(options).map(map_input_data)
 
-        predictions=model.predict(encoded_input,verbose=1,callbacks=[CustomCallback()])
+        predictions=model.predict(data_feeder,verbose=1,callbacks=[CustomCallback()])
         mapped_peptides['predictions']=predictions
 
     ## write the mapped results, i.e. predictions

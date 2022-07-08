@@ -1,4 +1,4 @@
-#!/usr/bin/env/python3
+#!/usr/bin/env python3
 """
 @author: Hesham ElAbd
 @brief: Create protein sequences a table containing protein sequence
@@ -24,7 +24,7 @@ def parse_argument()->Dict[str,Any]:
     parser=argparse.ArgumentParser(description='Mut2Prot, generates a table of protein sequences using a reference input sequence and a collection of mutation')
     
     parser.add_argument('--input_table',help='A table of three columns, the first columns represents the uniprot id, the second represents the genetic mutation, \
-        expressed as amino_acid_position_amino_acid, e.g. K341L or N211T, etc. The position **MUST BE ONE INDEXED**. The 3rd columns contains the phenotypes (Optional). Incase you genetic data is more comlex than\
+        expressed as amino_acid_position_amino_acid, e.g. K341L or N211T, etc. The position **MUST BE ONE INDEXED**. The 3rd columns contains the phenotypes (Optional). Incase you genetic data is more complex than\
             this representation. Please reformat your data as a VCF files and use VCF2Prot for execution. **FILES MUST BE TAB SEPERATED FILES**',
             default='?',action='store')
 
@@ -44,42 +44,43 @@ def parse_argument()->Dict[str,Any]:
     # Check the validity of the input table
     #-------------------------------------- 
     if args.input_table=='?':
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: The input genetic table has not been provided.\n')
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The input genetic table has not been provided.\n')
         sys.exit(-1)
     if not os.path.exists(args.input_table):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: The path to the input table: {args.input_table} has not been provided.')
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The path to the input table: {args.input_table} has not been provided.')
         sys.exit(-1)
     try:
         dev_read=pd.read_csv(args.input_table,nrows=10,sep='\t')
     except Exception as exp:
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: Reading the input table provided at: {args.input_table}\
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: Reading the input table provided at: {args.input_table}\
              risen the following exception: {str(exp)}')
         sys.exit(-1)
     if dev_read.shape[1] not in [2,3]:
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: Incorrect table provided at: {args.input_table}\
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: Incorrect table provided at: {args.input_table}\
              expect number of columns to 2 or 3 columns. However, your input has : {dev_read.shape[1]} columns')
         sys.exit(-1)
     # Check the validity of the resulting input FASTA files
     #-------------------------------------------------------
     if args.input_fasta == '?':
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: The input fasta has not been provided.\n')
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The input FASTA has not been provided.\n')
         sys.exit(-1)
     if not os.path.exists(args.input_table):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: The path to the input fasta file: {args.input_table} has not been provided.')
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The path to the input FASTA file: {args.input_table} has not been provided.')
         sys.exit(-1)
     # Check that we have access write at the resulting directory
     #-----------------------------------------------------------
     if not os.path.exists(os.path.dirname(args.results_path)):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: The base to write the write the results:\
+        print(f"Base dir is: {os.path.dirname(args.results_path)}, Does it exist: {os.path.exists(os.path.dirname(args.results_path))}")
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The base to write the write the results:\
              {os.path.dirname(args.results_path)} does not exists.')
         sys.exit(-1)
     if not os.access(os.path.dirname(args.results_path), os.W_OK):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: you (i.e. user: {os.login()} ) do not have writting access at the results path: {os.path.dirname(args.results_path)}\n')
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: you (i.e. user: {os.login()} ) do not have writing access at the results path: {os.path.dirname(args.results_path)}\n')
         sys.exit(-1)
     # check the value of the window size
     #-----------------------------------  
     if args.window_size not in range(9,22):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: The provided window size is not in range, only values between 9 and 21 are supported.')
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The provided window size is not in range, only values between 9 and 21 are supported.')
         sys.exit(-1)
     ## return the results
     #--------------------
@@ -128,7 +129,7 @@ def generate_personalized_proteins(proteome:Dict[str,str],path2gentic_table:str,
         try: 
             protein_seq=proteome[row.name]
         except Exception as exp:
-            sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: The sequence of protein {row.name} is not defined the input proteome.')
+            sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The sequence of protein {row.name} is not defined the input proteome.')
             sys.exit(1)
         # obtain the peptides and name
         mutated_peptides=apply_genetic_variant(row.genetic_variant, protein_seq, row.name, window_size)
