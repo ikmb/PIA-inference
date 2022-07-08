@@ -1,4 +1,4 @@
-#!/usr/bin/env/python3
+#! /usr/bin/env python3
 """
 @brief: A Python tool that takes as input the path to a directory containing FASTA files, it reads all the files, fragment them in parallele using a sliding window approach 
 with a step size of 1 and return the generated fragments.
@@ -57,29 +57,30 @@ def parse_arguments():
     ## add args 
     #----------
     if args.input_fasta_file=='?' and args.input_fasta_dir=='?':
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: The input fasta file or input fasta directory has not been provided.\n')
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The input fasta file or input fasta directory has not been provided.\n')
         sys.exit(-1)
     if (not os.path.exists(args.input_fasta_file)) and (not os.path.exists(args.input_fasta_dir)):
         input_name= args.input_fasta_file if args.input_fasta_file!='?' else args.input_fasta_dir
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: The path to the input : {input_name} does not exists.\n')
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The path to the input : {input_name} does not exists.\n')
         sys.exit(-1)
     if args.input_fasta_file!='?' and args.input_fasta_dir!='?':
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: the input fasta file and directory both have been provided. Meanwhile, these variable are mutually exclusive. \n')
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: the input fasta file and directory both have been provided. Meanwhile, these variable are mutually exclusive. \n')
         sys.exit(-1)
     # check the value of the window size
     #-----------------------------------  
     if args.window_size not in range(9,22):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: The provided window size is not in range, only values between 9 and 21 are supported.')
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The provided window size is not in range, only values between 9 and 21 are supported.')
         sys.exit(-1)
     
     # Check that we have access write at the resulting directory
     #-----------------------------------------------------------
     if not os.path.exists(os.path.dirname(args.results_path)):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: The base to write the write the results:\
+        print(f"The current working directory is: {os.getcwd()}")
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The base to write the write the results:\
 {os.path.dirname(args.results_path)} does not exists\n')
         sys.exit(-1)
     if not os.access(os.path.dirname(args.results_path), os.W_OK):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: you (i.e. user: {os.login()} ) do not have writting access at the results path: {os.path.dirname(args.results_path)}\n')
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: you (i.e. user: {os.login()} ) do not have writting access at the results path: {os.path.dirname(args.results_path)}\n')
         sys.exit(-1)
 
     # return the results
@@ -127,21 +128,34 @@ def fragment_proteome(path2fasta:str,window_size:int,step_size:int)->pd.DataFram
     # Create the protein and protein dict
     #------------------------------------
     protein_name=path2fasta.split('/')[-1].split('.')[0]
-    protein_dict={seq.id.split('|')[1]:str(seq.seq) for seq in SeqIO.parse(path2fasta,'fasta')}
+    protein_dict=dict()
+    for seq in SeqIO.parse(path2fasta,'fasta'):
+        if '|' in seq:
+            protein_dict[seq.id.split('|')[1]]=str(seq.seq)
+        else:
+            protein_dict[seq.id]=str(seq.seq)
     # Fragment the protein & get the index of each peptide  
     #-----------------------------------------------------
     peptide_sequences=[]
     peptide_names=[]
     for prot_id,prot_seq in protein_dict.items():
-        for idx in range(0,len(prot_seq)+1-window_size,step_size):
-            peptide_sequences.append(prot_seq[idx:idx+window_size])
-            peptide_names.append(protein_name+'$'+prot_id+'_'+str(idx))
+        if window_size> len(prot_seq):
+            continue
+        elif window_size==len(prot_seq):
+            peptide_names.append(protein_name+'$'+prot_id+'_'+str(0))
+            peptide_sequences.append(peptide_sequences)
+        else:
+            for idx in range(0,len(prot_seq)+1-window_size,step_size):
+                peptide_sequences.append(prot_seq[idx:idx+window_size])
+                peptide_names.append(protein_name+'$'+prot_id+'_'+str(idx))
+
     # Prepare the database 
     #---------------------
     results=pd.DataFrame({
         'peptides':peptide_sequences,
         'info':peptide_names
     })
+
     ## return the results
     #--------------------
     return results
@@ -159,9 +173,12 @@ def fragment_multiple_proteomes(path2fasta_dir:str,window_size:int,step_size:int
         pd.DataFrame: The resulting DataFrame containing peptide sequence 
     """
     fasta_files=[os.path.join(path2fasta_dir,fasta_file) for fasta_file in os.listdir(path2fasta_dir) if '.fa' in fasta_file]
-    results=pd.DataFrame(columns=['peptides','info','tissue'])
+    if user_arguments['tissue']!='-1':
+        results=pd.DataFrame(columns=['peptides','info','tissue'])
+    else:
+        results=pd.DataFrame(columns=['peptides','info'])
     if fasta_files==[]:
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: The provided input directory: {path2fasta_dir} does not seem to have any Fasta files !!!\n')
+        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The provided input directory: {path2fasta_dir} does not seem to have any FASTA files !!!\n')
         sys.exit(-1)
     else:
         num_worker=min(num_worker,len(fasta_files))
@@ -173,7 +190,7 @@ def fragment_multiple_proteomes(path2fasta_dir:str,window_size:int,step_size:int
                 ) )       
         for fut in concurrent.futures.as_completed(jobs):
             if fut.exception() is not None:
-                sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: Fragmenting a proteome gave rise to the following error: {str(fut.exception())}.\n')
+                sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: Fragmenting a proteome gave rise to the following error: {str(fut.exception())}.\n')
                 sys.exit(-1)
             proteome_fragments=fut.result()
             results=pd.concat([results,proteome_fragments],axis=0)
