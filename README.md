@@ -134,7 +134,6 @@ conda activate pia_inf
 conda install -y pip 
 
 # install the dependencies 
-
 pip install -r python_requirements.txt 
 
 ```
@@ -148,6 +147,10 @@ conda create -n pia_inf -y --fille python_requirements_conda.txt # here we chose
 # Activate the Conda environment 
 conda activate pia_inf
 ```
+
+#### Note
+
+After you install the libraries either with pip or conda, installing OmLIT is a prerequisite before launching the pipeline installation details are available [here](https://github.com/ikmb/OmLiT)
 
 ## Using the list of the pipeline
 
@@ -220,10 +223,10 @@ for more information regarding the installation check the webpage above, here we
 ```bash
 
 # 1. let's first decompress the generated VCF file 
-gunzip vcf_dev.vcf.gz 
+gunzip tests/test_three/vcf_dev.vcf.gz 
 
 # 2. let's de compress the reference sequence 
-gunzip reference_proteome.fasta.gz
+gunzip tests/test_three/reference_proteome.fasta.gz
 
 # 3. call the program 
 ./PIA_inference.sh -d tests/test_three/ \
