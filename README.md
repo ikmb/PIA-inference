@@ -46,7 +46,7 @@ mkdir examples/example_proteins
 cp examples/*fasta example_proteins
 
 # 9. Call the program  
-./fragmentor.py --input_fasta_dir examples/SARS_COV2.fasta \ # Notice the change in parameter from input_fasta_file to input_fasta_dir
+./fragmentor.py --input_fasta_dir examples/example_proteins \ # Notice the change in parameter from input_fasta_file to input_fasta_dir
     --window_size 15 \
     --step_size 1 \
     --num_worker 1 \
@@ -142,7 +142,7 @@ pip install -r python_requirements.txt
 
 ```bash
 # we highly recommend to create a new environment using Conda to have a clean and isolated environment 
-conda create -n pia_inf -y --fille python_requirements_conda.txt # here we chose pia_inf but you can replace it with any name you like 
+conda create -n pia_inf -y --file python_requirements_conda.txt # here we chose pia_inf but you can replace it with any name you like 
 
 # Activate the Conda environment 
 conda activate pia_inf
@@ -235,7 +235,7 @@ gunzip tests/test_three/reference_proteome.fasta.gz
                 -v vcf_dev.vcf -m 1 -w 15 -z 1
 ```
 
-### IV. Testing with the 4th execution model
+### V. Testing with the 4th execution model
 
 Here, the aim is to execute the model with a FASTA file representing a proteome of interest, here we are going to focus on COVID-19 proteome as we did before
 
