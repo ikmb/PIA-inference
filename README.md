@@ -152,7 +152,36 @@ conda activate pia_inf
 
 After you install the libraries either with pip or conda, installing OmLIT is a prerequisite before launching the pipeline installation details are available [here](https://github.com/ikmb/OmLiT)
 
-## Using the list of the pipeline
+## Input description
+
+### Input type for the four execution route supported by the pipeline
+
+- Input table: a simple TSV table containing the peptide and the allele and the user has to adhere to the expected shape of the table where two columns are mandatory (the first is ‘peptide’) the second is (‘allele’), alleles must be written as follow: HLA-DR as DRBx_ffss where x is the gene name, can be 1,3,4,5 and ff is the first field for example 01, 05 or 15 and last is the second field input for example 01, 03, hence an example case will be DRB1_1501 or DRB5_0101. A third optional column can contain the tissue, this is only used in case, the prediction model is set to PIA_M.
+
+**Supported input formats:**
+.tsv or .tsv.gz  
+
+- Proteome: a valid FASTA file and list of alleles, the names must be written in the standard full name, *e.g.* HLA-DRA1*01:01/HLA-DRB1*15:01 for more details check [Here](http://hla.alleles.org/nomenclature/naming.html).
+
+**Supported input formats:**
+*Fasta file*: .FASTA , .fa, FASTA.gz or fa.gz  
+*Allele list*: .tsv or .txt  the first line is the **HEADER**
+
+- Genetic Table: A simple TSV file containing two columns: the first is ‘name’ and the second is ‘genetic_variant’. The name contains the accession of the protein and ONLY the accession of the protein while the second column contains only the variants, e.g. D5A or E32F. The second input is the FASTA file, this input MUST contain protein accession as sequence ids and ONLY accession as a sequence ids. Second, this file must contain the PROTEIN sequence of the associated antigen. Lastly, and list of alleles, the names must be written in the standard full name, e.g. HLA-DRA1*01:01/HLA-DRB1*15:01 for more details check [Here](http://hla.alleles.org/nomenclature/naming.html).
+
+**Supported input formats:**
+*Genetic Table*: .tsv or .tsv.gz
+*Fasta file*:.FASTA , .fa, FASTA.gz or fa.gz  
+*Allele list*: .tsv or .txt
+*VCF*: A VCF file that is first Phased and, second, contain consequences called with BCFtools/csq
+
+Along with a reference proteome that contains the protein sequence of each transcript in the VCF file where the sequences ids are the transcript ids and only the transcript ids. Lastly, and list of alleles, the names must be written in the standard full name, e.g. HLA-DRA1*01:01/HLA-DRB1*15:01 for more details [check](http://hla.alleles.org/nomenclature/naming.html)
+
+*VCF*: .vcf or .vcf.gz
+*Fasta file*: .FASTA , .fa, FASTA.gz or fa.gz  
+*Allele list*: .tsv or .txt
+
+## Using the pipeline
 
 ### I. calling the pipeline for help messages
 
@@ -179,6 +208,13 @@ cat tests/test_one/test_one.logs
 # 4. finally, the output file will be located at: 
 
 head tests/test_one/output/prediction_results.tsv
+```
+
+Then, we can test the pipeline with other models as follow
+
+```bash
+# 1. call the pipeline 
+./PIA_inference.sh -d tests/test_one/ -s test_input_table.tsv -m 2 -w 15 -z 1 # using PIA-M and blood as a default tissue
 ```
 
 ### III. Testing with the second execution model
