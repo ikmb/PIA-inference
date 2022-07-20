@@ -102,10 +102,23 @@ LAST_ERROR_CODE=$0
 
 # checking for error with creating the output directory
 #------------------------------------------------------
-if [ $LAST_EXIT_CODE != 0 ]
+if [[ $LAST_EXIT_CODE != 0 ]]
 then 
+    if [[ -d "$ROOT_DIR/output" ]]
+    then
+        rm -r $ROOT_DIR/output
+        mkdir "$ROOT_DIR/output"
+        LAST_ERROR_CODE=$0
+
+        if [[ $LAST_EXIT_CODE != 0 ]]
+        then 
+            echo "ERROR: $(date -u): Failed with the following error: $LAST_EXIT_CODE while creating a directory to store the results" 
+            exit $LAST_EXIT_CODE # return the same exit code as the failed process 
+        fi 
+    else
     echo "ERROR: $(date -u): Failed with the following error: $LAST_EXIT_CODE while creating a directory to store the results" 
     exit $LAST_EXIT_CODE # return the same exit code as the failed process 
+    fi 
 fi 
 
 mkdir "$ROOT_DIR/stat"
@@ -113,10 +126,23 @@ LAST_ERROR_CODE=$0
 
 # hecking for error with creating the stat directory
 #---------------------------------------------------
-if [ $LAST_EXIT_CODE != 0 ]
+if [[ $LAST_EXIT_CODE != 0 ]]
 then 
-    echo "ERROR: $(date -u): Failed with the following error: $LAST_EXIT_CODE while creating a directory to store the logs and state files" 
+    if [[ -d "$ROOT_DIR/stat" ]]
+    then
+        rm -r "$ROOT_DIR/stat"
+        mkdir "$ROOT_DIR/stat"
+        LAST_ERROR_CODE=$0
+
+        if [[ $LAST_EXIT_CODE != 0 ]]
+        then 
+            echo "ERROR: $(date -u): Failed with the following error: $LAST_EXIT_CODE while creating a directory to store the logs and progress lines" 
+            exit $LAST_EXIT_CODE # return the same exit code as the failed process 
+        fi 
+    else
+    echo "ERROR: $(date -u): Failed with the following error: $LAST_EXIT_CODE while creating a directory to store the logs and progress lines" 
     exit $LAST_EXIT_CODE # return the same exit code as the failed process 
+    fi  
 fi 
 
 # 2. check that the logic of input command line is valid and set th execution Route
@@ -194,7 +220,7 @@ then
     --output_path "./output/prediction_results.tsv"\
     --unmapped_results "./output/unmapped_results.tsv" >> "$ROOT_DIR/output/run.log" 2>> "$ROOT_DIR/stat/run.error"
     echo "INFO:: $(date -u): Execution finished." >> "$ROOT_DIR/stat/run.error"
-    rm -r "$dir_name/temp_work/creating_protein_sequences/" 
+    rm -r "temp_work/creating_protein_sequences/" 
     exit 0
 
 elif [ $ROUTE == 2 ]
@@ -208,7 +234,7 @@ then
     if [ $LAST_EXIT_CODE != 0 ]
     then 
         echo "ERROR: $(date -u): Running Mut2Prot failed with the following error code: $LAST_EXIT_CODE" 2>> "$ROOT_DIR/stat/run.error"
-        rm -r "$dir_name/temp_work/creating_protein_sequences/" 
+        rm -r "temp_work/creating_protein_sequences/" 
         exit $LAST_EXIT_CODE # return the same exit code as the failed process 
     fi 
     
@@ -219,7 +245,7 @@ then
     if [ $LAST_EXIT_CODE != 0 ]
     then 
         echo "ERROR: $(date -u): Cleaning the generated file failed with the following line of code: $LAST_EXIT_CODE" 2>> "$ROOT_DIR/stat/run.error"
-        rm -r "$dir_name/temp_work/creating_protein_sequences/"
+        rm -r "temp_work/creating_protein_sequences/"
         exit $LAST_EXIT_CODE # return the same exit code as the failed process 
     fi 
 
@@ -243,7 +269,7 @@ then
     if [ $LAST_EXIT_CODE != 0 ]
     then 
         echo "ERROR: $(date -u): Running vcf2prot failed with the following error code: $LAST_EXIT_CODE" 2>> "$ROOT_DIR/stat/run.error"
-        rm -r "$dir_name/temp_work/creating_protein_sequences/"
+        rm -r "temp_work/creating_protein_sequences/"
         exit $LAST_EXIT_CODE # return the same exit code as the failed process 
     fi      
     # 1. fragment the proteome of the input sample 
@@ -259,7 +285,7 @@ then
     if [ $LAST_EXIT_CODE != 0 ]
     then 
         echo "ERROR: $(date -u): Running fragmentor with sample: $sample_proteome failed with the following error code: $LAST_EXIT_CODE" 2>> "$ROOT_DIR/stat/run.error"
-        rm -r "$dir_name/temp_work/creating_protein_sequences/"
+        rm -r "temp_work/creating_protein_sequences/"
         exit $LAST_EXIT_CODE # return the same exit code as the failed process 
     fi 
 
@@ -277,7 +303,7 @@ then
     if [ $LAST_EXIT_CODE != 0 ]
     then 
         echo "ERROR: $(date -u): Running fragmentor.py failed with the following error code: $LAST_EXIT_CODE" 2>> "$ROOT_DIR/stat/run.error"
-        rm -r "$dir_name/temp_work/creating_protein_sequences/"
+        rm -r "temp_work/creating_protein_sequences/"
         exit $LAST_EXIT_CODE # return the same exit code as the failed process 
     fi 
 fi 
@@ -293,7 +319,7 @@ let LAST_EXIT_CODE=$?
 if [ $LAST_EXIT_CODE != 0 ]
 then 
     echo "ERROR: $(date -u): Running Allele2standard failed with the following error code: $LAST_EXIT_CODE" 2>> "$ROOT_DIR/stat/run.error"
-    rm -r "$dir_name/temp_work/creating_protein_sequences/"
+    rm -r "temp_work/creating_protein_sequences/"
     exit $LAST_EXIT_CODE # return the same exit code as the failed process 
 fi 
 #---------------------------------------------
@@ -330,7 +356,7 @@ let LAST_EXIT_CODE=$?
 if [ $LAST_EXIT_CODE != 0 ]
 then 
     echo "ERROR: $(date -u): Running prediction_engine_portal.py failed with the following error code: $LAST_EXIT_CODE " 2>> "$ROOT_DIR/stat/run.error"
-    rm -r "$dir_name/temp_work/creating_protein_sequences/"
+    rm -r "temp_work/creating_protein_sequences/"
     exit $LAST_EXIT_CODE # return the same exit code as the failed process 
 fi
 
