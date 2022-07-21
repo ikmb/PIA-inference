@@ -79,6 +79,19 @@ done
 ## Parsing and checking the parameters  
 #-------------------------------------
 
+# Checking that the environmental variables have been set 
+#--------------------------------------------------------
+if [[ -v ${PATH2BIN} ]]
+then 
+    echo "The path to binnaries, i.e., PATH2BIN has not been exported, please export the path and try again"
+    exit -1 
+fi 
+
+if [[ -v ${PATH2ASSETS} ]]
+then 
+    echo "The path to the assets, i.e., PATH2ASSETS has not been exported, please export the path and try again"
+    exit -1 
+fi 
 
 # 1. check the input directory exists 
 if [ $dir_name == -1 ]
@@ -97,7 +110,7 @@ ROOT_DIR=$dir_name
 
 ## Export PATH
 #-------------
-export PATH=$(pwd):$PATH
+export PATH=$PATH2BIN:$PATH
 
 # Building the Prelude 
 #---------------------
