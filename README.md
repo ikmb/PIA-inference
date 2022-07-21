@@ -6,7 +6,7 @@ To provides a framework for modeling peptide HLA-II at large-scale using differe
 
 ## Implementation
 
-The pipeline is currently implemented as a Bash script that first, glues together different Python scripts, second parse user argument and select the correct execution path. Finally, it manages the logging and the correct execution of each script.
+The pipeline is currently implemented as a Bash script that first, glues together different Python scripts, second parse user arguments and select the correct execution path. Finally, it manages the logging and the correct execution of each script.
 
 ### Building blocks
 
@@ -14,7 +14,7 @@ The pipeline is built using different modular units, these are:
 
 #### I. *Framgentor*
 
-The *fragmentor* is a Python-based command line tool (CLT) that is used for fragmenting input proteins into peptides with a fixed size using a sliding window approach. These can either be a single FASTA File or multiple FASTA files. Incase of a single file, execution is single-threaded. Meanwhile, with a list of FASTA files a pool of worker threads is used for parsing the input. Regardless, of the execution methods, peptides generate from a single or multiple proteomes are written as a single tsv file. An example for using the fragmentor as a standalone tool is show below
+The *fragmentor* is a Python-based command line tool (CLT) that is used for fragmenting input proteins into peptides with a fixed size using a sliding window approach. These proteins can either be a single FASTA File or multiple FASTA files. Incase of a single file, execution is single-threaded. Meanwhile, with a list of FASTA files a pool of worker threads is used for parsing the input. Regardless of the execution methods, peptides generated from a single or multiple proteomes are written as a single tsv file. An example for using the fragmentor as a standalone tool is show below
 
 ```bash
 # 1. make sure you have either cloned the repository with 
@@ -59,7 +59,7 @@ head examples/fragmentation_results_all.tsv
 
 #### II. *Mut2Prot*
 
-It is a Python-bashed CLT that is parsing a tsv table containing genetic mutations in order to generate a personalized or sample-specific proteomes, *i.e.* a collection of protein sequences.
+It is a Python-bashed CLT that parses a tsv table containing genetic mutations in order to generate a personalized or sample-specific proteomes, *i.e.* a collection of protein sequences.
 
 ```bash
 # 1. make sure you have either cloned the repository with 
@@ -80,11 +80,11 @@ cd PIA-inference
 
 #### III. *vcf2prot*
 
-VCF2Prot is a Rust based executable that can be used for the large scale generation of sample-specific proteomes from VCF files, for more information regarding the use of VCF2prot please [click here](https://github.com/ikmb/vcf2prot/tree/main)
+VCF2Prot is a Rust-based executable that can be used for the large scale generation of sample-specific proteomes from VCF files, for more information regarding the use of VCF2prot please [click here](https://github.com/ikmb/vcf2prot/tree/main)
 
 #### IV. *allele2standard*
 
-It is a Python-based command line tool that takes a list of alleles written in the standard notation as an input and return formatted names that is used for handling extracting pseudo-sequences. An example of using the pipeline is sen below
+It is a Python-based command line tool that takes a list of alleles written in the standard notation as an input and return formatted names that is used for handling extracting pseudo-sequences. An example of using the pipeline is shown below
 
 ```bash
 
@@ -110,7 +110,7 @@ DRB1_1301
 
 ### Mixer
 
-The Mixer is a CML line that is used for mixing the list of alleles with the input peptides to prepare the input to the prediction model as explained below
+The Mixer is a CML line that is used for mixing the list of alleles with the input peptides to prepare the input to the prediction model as explained below.
 
 ### The prediction engine
 
@@ -142,7 +142,7 @@ pip install -r python_requirements.txt
 
 ```bash
 # we highly recommend to create a new environment using Conda to have a clean and isolated environment 
-conda create -n pia_inf -y --file python_requirements_conda.txt # here we chose pia_inf but you can replace it with any name you like 
+conda create -n pia_inf -y --file python_requirements.txt # here we chose pia_inf but you can replace it with any name you like 
 
 # Activate the Conda environment 
 conda activate pia_inf
@@ -154,11 +154,11 @@ After you install the libraries either with pip or conda, installing OmLIT is a 
 
 ## Export the Paths
 
-Before using the pipeline the path to the software and the datasets needed for running the pipeline shall be exported using the following environment variable:
+Before using the pipeline the path to the software and the datasets needed for running the pipeline shall be exported using the following environmental variables:
 
 1. **PATH2BIN** Which hold the path to all the modular units of the pipeline.
 
-2. **PATH2ASSETS** which points to all the assets and data needed for running the pipeline **ADD THE ASSETS AFTER SUBMISSION**
+2. **PATH2ASSETS** which points to all assets and datasets needed for running the pipeline **ADD THE ASSETS AFTER SUBMISSION**
 
 ### examples
 
@@ -197,30 +197,38 @@ source ~/.bashrc
 
 ### Input type for the four execution route supported by the pipeline
 
-- Input table: a simple TSV table containing the peptide and the allele and the user has to adhere to the expected shape of the table where two columns are mandatory (the first is ‘peptide’) the second is (‘allele’), alleles must be written as follow: HLA-DR as DRBx_ffss where x is the gene name, can be 1,3,4,5 and ff is the first field for example 01, 05 or 15 and last is the second field input for example 01, 03, hence an example case will be DRB1_1501 or DRB5_0101. A third optional column can contain the tissue, this is only used in case, the prediction model is set to PIA_M.
+- Input table: a simple TSV table containing the list of peptides and alleles. The expected shape of the table is two mandatory columns (the first is ‘peptide’) the second is (‘allele’), alleles must be written as follow:
+
+1. HLA-DR as DRBx_ffss where x is the gene name, can be 1,3,4,5 and ff is the first field for example 01, 05 or 15 and ss is the second field input for example 01, 03, hence an example case will be DRB1_1501 or DRB5_0101.
+
+2. HLA-DP and HLA-DQ as HLA-DPAxffss-DPBxffss where x is the gene name, and ff is the first field while ss is the second field, for example, HLA-DPA10103-DPB10601 for representing HLA-DPA1*01:03/DPB*10:06
+
+A third optional column containing the tissue name is also accepted. However, this is only used in case, the prediction model is set to PIA_M.
 
 **Supported input formats:**
 .tsv or .tsv.gz  
 
-- Proteome: a valid FASTA file and list of alleles, the names must be written in the standard full name, *e.g.* HLA-DRA1*01:01/HLA-DRB1*15:01 for more details check [Here](http://hla.alleles.org/nomenclature/naming.html).
+- Proteome: a valid FASTA file and a list of alleles, the names must be written in the standard full name, *e.g.* HLA-DRA1*01:01/HLA-DRB1*15:01 for more details check [Here](http://hla.alleles.org/nomenclature/naming.html).
 
 **Supported input formats:**
-*Fasta file*: .FASTA , .fa, FASTA.gz or fa.gz  
-*Allele list*: .tsv or .txt  the first line is the **HEADER**
 
-- Genetic Table: A simple TSV file containing two columns: the first is ‘name’ and the second is ‘genetic_variant’. The name contains the accession of the protein and ONLY the accession of the protein while the second column contains only the variants, e.g. D5A or E32F. The second input is the FASTA file, this input MUST contain protein accession as sequence ids and ONLY accession as a sequence ids. Second, this file must contain the PROTEIN sequence of the associated antigen. Lastly, and list of alleles, the names must be written in the standard full name, e.g. HLA-DRA1*01:01/HLA-DRB1*15:01 for more details check [Here](http://hla.alleles.org/nomenclature/naming.html).
+1. *Fasta file*: .FASTA , .fa, FASTA.gz or fa.gz  
+2. *Allele list*: .tsv or .txt  the first line is the **HEADER**
+
+- Genetic Table: A simple TSV file containing two columns: the first is ‘name’ and the second is ‘genetic_variant’. The name contains the accession of the protein and ONLY the accession of the protein while the second column contains only the variants, *e.g.* D5A or E32F. The second input is the FASTA file, this input MUST contain protein accession as sequence ids and ONLY accession as a sequence ids. Second, this file must contain the PROTEIN sequence of the associated antigen. Lastly, a list of alleles, the names must be written in the standard full name, *e.g.* HLA-DRA1*01:01/HLA-DRB1*15:01 for more details check [Here](http://hla.alleles.org/nomenclature/naming.html).
 
 **Supported input formats:**
-*Genetic Table*: .tsv or .tsv.gz
-*Fasta file*:.FASTA , .fa, FASTA.gz or fa.gz  
-*Allele list*: .tsv or .txt
-*VCF*: A VCF file that is first Phased and, second, contain consequences called with BCFtools/csq
 
-Along with a reference proteome that contains the protein sequence of each transcript in the VCF file where the sequences ids are the transcript ids and only the transcript ids. Lastly, and list of alleles, the names must be written in the standard full name, e.g. HLA-DRA1*01:01/HLA-DRB1*15:01 for more details [check](http://hla.alleles.org/nomenclature/naming.html)
+1. *Genetic Table*: .tsv or .tsv.gz
+2. *Fasta file*:.FASTA , .fa, FASTA.gz or fa.gz  
+3. *Allele list*: .tsv or .txt
 
-*VCF*: .vcf or .vcf.gz
-*Fasta file*: .FASTA , .fa, FASTA.gz or fa.gz  
-*Allele list*: .tsv or .txt
+- VCF files
+A VCF file that is first Phased and, second, contain consequences called with BCFtools/csq. Along with a reference proteome that contains the protein sequence of each transcript in the VCF file where the sequences ids are the transcript ids and only the transcript ids. Lastly, and list of alleles, the names must be written in the standard full name, *e.g.* HLA-DRA1*01:01/HLA-DRB1*15:01 for more details [check](http://hla.alleles.org/nomenclature/naming.html)
+
+1. *VCF*: .vcf or .vcf.gz
+2. *Fasta file*: .FASTA , .fa, FASTA.gz or fa.gz  
+3. *Allele list*: .tsv or .txt
 
 ## Using the pipeline
 
@@ -293,7 +301,7 @@ Here, the aim is to run the predictions using a VCF file containing patient gene
 ./vcf2prot -h 
 ```
 
-for more information regarding the installation check the webpage above, here we are going to utilize a VCF file containing genetic mutations observed across sample HG00096. This dataset was obtained from the [1000Genome project](http://www.internationalgenome.org). While the reference proteome will be obtained from Ensemble reference's specifically, the protein sequence of each transcript.
+for more information regarding the installation check the webpage above, here we are going to utilize a VCF file containing genetic mutations observed across sample HG00096. This dataset was obtained from the [1000Genome project](http://www.internationalgenome.org). While the reference proteome was obtained from Ensemble reference's specifically, the protein sequence of each transcript.
 
 #### Calling the pipeline
 
@@ -327,7 +335,7 @@ Here, the aim is to execute the model with a FASTA file representing a proteome 
 
 ## Result description
 
-Running the pipeline produce two directories in the root directory provided by the user with argument *-d* as described above. These two files are:
+Running the pipeline produces two directories in the root directory provided by the user with argument *-d* as described above. These two files are:
 
 1. output which contains three files:
     1. prediction_results.tsv which contain the generated results
@@ -336,7 +344,7 @@ Running the pipeline produce two directories in the root directory provided by t
 
 2. stat which contain two files:
     1. run.error which records all the errors encountered by the pipeline
-    2. run.stat which records the progress made by the prediction engine, this can be especially important for checking the progress of very large jobs and datasets. 
+    2. run.stat which records the progress made by the prediction engine, this can be especially important for checking the progress of very large jobs and datasets.
 
 ## Funding
 
