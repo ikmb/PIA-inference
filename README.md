@@ -43,7 +43,7 @@ head examples/fragmentation_results.tsv
 mkdir examples/example_proteins
 
 # 8. We copy all fasta file to the example proteins 
-cp examples/*fasta example_proteins
+cp examples/*fasta examples/example_proteins
 
 # 9. Call the program  
 ./fragmentor.py --input_fasta_dir examples/example_proteins \ # Notice the change in parameter from input_fasta_file to input_fasta_dir
@@ -151,6 +151,47 @@ conda activate pia_inf
 #### Note
 
 After you install the libraries either with pip or conda, installing OmLIT is a prerequisite before launching the pipeline installation details are available [here](https://github.com/ikmb/OmLiT)
+
+## Export the Paths
+
+Before using the pipeline the path to the software and the datasets needed for running the pipeline shall be exported using the following environment variable:
+
+1. **PATH2BIN** Which hold the path to all the modular units of the pipeline.
+
+2. **PATH2ASSETS** which points to all the assets and data needed for running the pipeline **ADD THE ASSETS AFTER SUBMISSION**
+
+### examples
+
+#### 1. Temporary variable execution
+
+```bash
+export PATH2BIN=ABSOLUTE_path_to_python_and_rust_tools 
+export PATH2ASSETS=ABSOLUTE_path_to_data
+./PIA_inference.sh -h
+```
+
+Please notice, that you might export the path PIA_inference.sh to make it callable from any where on your local computer or cluster. This can be done at the terminal using 
+
+```bash
+export PATH=path_2_pia_inference:$PATH
+```
+
+#### 2. Permanent variable execution
+
+As described above, this method export the path temporary, this mean if you restarted your terminal or opened a new terminal you MUST export these paths again, to get a "Permanent" solution to the problem please export this to your **~/.bashrc** file. This can be done as follow:
+
+```bash
+
+echo PATH2BIN=ABSOLUTE_path_to_python_and_rust_tools >>  ~/.bashrc
+echo PATH2ASSETS=ABSOLUTE_path_to_data >>  ~/.bashrc
+
+```
+
+Then you can either open a new terminal or source the bashrc file using
+
+```bash
+source ~/.bashrc
+```
 
 ## Input description
 
@@ -283,6 +324,19 @@ Here, the aim is to execute the model with a FASTA file representing a proteome 
     -a test_case_allele2standard.tsv\
     -m 1 -w 15 -z 1
 ```
+
+## Result description
+
+Running the pipeline produce two directories in the root directory provided by the user with argument *-d* as described above. These two files are:
+
+1. output which contains three files:
+    1. prediction_results.tsv which contain the generated results
+    2. unmapped_results.tsv which contain un-mapped datasets, either because the allele was not supported or the parent protein could not be mapped to the multi-omics database (This is specially prominent with PIA-M)
+    3. run.log which contain the logs of the run
+
+2. stat which contain two files:
+    1. run.error which records all the errors encountered by the pipeline
+    2. run.stat which records the progress made by the prediction engine, this can be especially important for checking the progress of very large jobs and datasets. 
 
 ## Funding
 
