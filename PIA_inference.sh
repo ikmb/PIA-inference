@@ -87,7 +87,7 @@ then
     exit -1 
 fi 
 
-if [[ -v "${PATH2ASSETS+1}" ]]
+if [[ -n "${PATH2ASSETS+1}" ]]
 then 
     echo "The path to the assets, i.e., PATH2ASSETS has not been exported, please export the path and try again"
     exit -1 
