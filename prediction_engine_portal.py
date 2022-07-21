@@ -177,15 +177,15 @@ def load_model(model_index:int)->tf.keras.models.Model:
      with mirrored_strategy.scope():
           if model_index==1:
                model=create_basic_imformer(maxlen=55,vocab_size=28,embedding_dim=32,num_heads=4,feedforward=64,num_blocks=3)
-               model.load_weights('/work_ifs/sukmb418/PIA-inference/assets/PIA_S.h5')
+               model.load_weights(os.getenv('PATH2ASSETS')+'/PIA_S.h5')
                print(f"{time.ctime()} INFO:: PIA-S has been loaded")
           elif model_index==2:
                model=create_subcellular_location_transcription_contexted_dist_to_gly_imformer(maxlen=55,vocab_size=28,embedding_dim=32,num_heads=4,feedforward=64,num_blocks=3) 
-               model.load_weights('/work_ifs/sukmb418/PIA-inference/assets/PIA_M.h5')
+               model.load_weights(os.getenv('PATH2ASSETS')+'/PIA_M.h5')
                print(f"{time.ctime()} INFO:: PIA-M has been loaded")
           else: 
-               raise ValueError(f"{time.ctime()}:: Unsupported model index, current model only support 4 indices,\
-                    1 --> PIA-S (public), 2 --> PIA-S (public+inhouse), 3 --> PIA-M (public), 4 --> PIA-M (public+inhouse). while your input is: {model_index}")
+               raise ValueError(f"{time.ctime()}:: Unsupported model index, current model only support 2 indices,\
+                    1 --> PIA-S, 2 --> PIA-M. while your input is: {model_index}")
      return model
 
 def encode_input_for_pia_s(path2input:str)->Tuple[pd.DataFrame,np.ndarray,pd.DataFrame]:
@@ -223,14 +223,12 @@ def encode_input_for_pia_s(path2input:str)->Tuple[pd.DataFrame,np.ndarray,pd.Dat
     
     ### Load the pseudo sequence
     #---------------------------
-    pseudo_sequences=pd.read_csv('/work_ifs/sukmb418/PIA-inference/assets/pseudosequence.2016.all.X.dat',header=None,sep='\t')
-    pseudo_sequences.columns=['Allele','pseudo_sequence']
-
+   
+    pseudo_sequences_look_up=pd.read_csv(os.getenv('PATH2ASSETS')+'/pseudosequence.2016.all.X.dat',header=None,sep='\t')
+    pseudo_sequences_look_up.columns=['Allele','pseudo_sequence']
+    
     ### get unmapped due-to un matached alleles
     #------------------------------------------
-    pseudo_sequences_look_up=pd.read_csv('/work_ifs/sukmb418/PIA-inference/assets/pseudosequence.2016.all.X.dat',header=None,sep='\t')
-    pseudo_sequences_look_up.columns=['Allele','pseudo_sequence']
-    ### Remove un filtered 
     print(f"{time.ctime()} INFO:: filtering the input table with {input_table.shape[0]} elements.")
     unmapped=input_table.loc[~((input_table.peptide.str.isalpha()) & (input_table.allele.isin(pseudo_sequences_look_up.Allele))),]
     mapped=input_table.loc[((input_table.peptide.str.isalpha()) & (input_table.allele.isin(pseudo_sequences_look_up.Allele))),]
@@ -244,7 +242,7 @@ def encode_input_for_pia_s(path2input:str)->Tuple[pd.DataFrame,np.ndarray,pd.Dat
     #---------------------------
     print(f"{time.ctime()} INFO:: Extracted the pseudo-sequences for each allele")
     #-------------------
-    encoded_input,_=linker.annotate_and_encode_input_for_pia_s((peptides,HLA), 21, '/work_ifs/sukmb418/PIA-inference/assets/pseudosequence.2016.all.X.dat')
+    encoded_input,_=linker.annotate_and_encode_input_for_pia_s((peptides,HLA), 21, os.getenv('PATH2ASSETS')+'/pseudosequence.2016.all.X.dat')
 
     ### Make a dataframe from the results
     #------------------------------------
@@ -346,8 +344,8 @@ def encode_input_for_pia_m(path2input:str, tissue=str)->Tuple[pd.DataFrame,Tuple
     ## get the encoded and the un-encoded peptides
     encoded_tensors,unmapped_data=linker.annotate_and_encode_input_sequences_no_label(
         input=input2_OmLiT_annotator,max_len=21,proteome=load_proteome(),
-        path2cashed_db='/work_ifs/sukmb418/PIA-inference/assets/cashed_database.db',
-        path2pseudo_seq='/work_ifs/sukmb418/PIA-inference/assets/pseudosequence.2016.all.X.dat',
+        path2cashed_db=os.getenv('PATH2ASSETS')+'/cashed_database.db',
+        path2pseudo_seq=os.getenv('PATH2ASSETS')+'/pseudosequence.2016.all.X.dat',
         only_one_parent_per_peptide=True 
     )
     unmapped=input_table.loc[unmapped_data[-1]].copy(deep=True).reset_index(drop=True)
@@ -373,7 +371,7 @@ def load_proteome()->Dict[str,str]:
          Dict[str,str]: a dict containing a map between sequence id and sequence names. 
      """
      results=dict()
-     for seq in SeqIO.parse('/work_ifs/sukmb418/PIA-inference/assets/filtered_human_sequences_database.fasta','fasta'):
+     for seq in SeqIO.parse(os.getenv('PATH2ASSETS')+'/filtered_human_sequences_database.fasta','fasta'):
           results[seq.id]=str(seq.seq)
      return results
 
