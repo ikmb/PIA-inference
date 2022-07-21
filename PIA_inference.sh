@@ -81,13 +81,13 @@ done
 
 # Checking that the environmental variables have been set 
 #--------------------------------------------------------
-if [[ -v ${PATH2BIN} ]]
+if [[ -n "${PATH2BIN+1}" ]]
 then 
     echo "The path to binnaries, i.e., PATH2BIN has not been exported, please export the path and try again"
     exit -1 
 fi 
 
-if [[ -v ${PATH2ASSETS} ]]
+if [[ -v "${PATH2ASSETS+1}" ]]
 then 
     echo "The path to the assets, i.e., PATH2ASSETS has not been exported, please export the path and try again"
     exit -1 
@@ -143,14 +143,14 @@ elif [[ -f "$dir_name/$genotype_table" ]] && [[ -f "$dir_name/$fasta_file" ]] # 
 then
     ## UNZIP THE GENOTYPE TABLE
     #--------------------------
-    if [[ $dir_name/$genotype_table == *.gz ]]
+    if [[ "$dir_name/$genotype_table" == *.gz ]]
     then 
         gunzip $dir_name/$genotype_table
 
         # Check that the unzipping has finished correctly
         #------------------------------------------------ 
         
-        LAST_ERROR_CODE=$?     
+        LAST_EXIT_CODE=$?     
         if [ $LAST_EXIT_CODE != 0 ]
         then 
             echo "ERROR:: $(date -u): Your input genotype table has a .gz extention but unzipping it failed with the following error code: $LAST_ERROR_CODE" 2>> "$ROOT_DIR/stat/run.error" 
@@ -164,14 +164,14 @@ then
 
     ## UNZIP THE FASTA FILE 
     #----------------------
-    if [[ $dir_name/$fasta_file == *.gz ]]
+    if [[ "$dir_name/$fasta_file" == *.gz ]]
     then 
         gunzip $dir_name/$fasta_file
 
         # Check that the unzipping has finished correctly
         #------------------------------------------------ 
         
-        LAST_ERROR_CODE=$?     
+        LAST_EXIT_CODE=$?     
         if [ $LAST_EXIT_CODE != 0 ]
         then 
             echo "ERROR:: $(date -u): Your input FASTA file has a .gz extention but unzipping it failed with the following error code: $LAST_ERROR_CODE" 2>> "$ROOT_DIR/stat/run.error" 
@@ -217,7 +217,7 @@ then
         # Check that the unzipping has finished correctly
         #------------------------------------------------ 
         
-        LAST_ERROR_CODE=$?     
+        LAST_EXIT_CODE=$?     
         if [[ $LAST_EXIT_CODE != 0 ]]
         then 
             echo "ERROR:: $(date -u): Your input FASTA file has a .gz extention but unzipping it failed with the following error code: $LAST_ERROR_CODE" 2>> "$ROOT_DIR/stat/run.error" 
@@ -234,6 +234,29 @@ then
     ROUTE=3
 elif [[ -f "$dir_name/$fasta_file" ]]
 then
+   ## UNZIP THE FASTA FILE 
+    #----------------------
+    if [[ "$dir_name/$fasta_file" == *.gz ]]
+    then 
+        gunzip $dir_name/$fasta_file
+
+        # Check that the unzipping has finished correctly
+        #------------------------------------------------ 
+        
+        LAST_EXIT_CODE=$?     
+        if [ $LAST_EXIT_CODE != 0 ]
+        then 
+            echo "ERROR:: $(date -u): Your input FASTA file has a .gz extention but unzipping it failed with the following error code: $LAST_ERROR_CODE" 2>> "$ROOT_DIR/stat/run.error" 
+            exit 1
+        fi 
+
+        # update the genotype file name to contain the results without the .gz extension 
+        #-------------------------------------------------------------------------------
+        fasta_file=$(echo $fasta_file | cut -d '.' -f 1,2) 
+    fi 
+
+    ## SET EXECUTION the ROUTE
+    #-------------------------
     ROUTE=4
 else
     echo "ERROR:: $(date -u): Unknow execution route, requirments for running any of the execution pipelines has not been provided, the requirment as follow" 2>> "$ROOT_DIR/output/run.log"
