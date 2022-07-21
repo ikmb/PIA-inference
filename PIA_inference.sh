@@ -95,56 +95,32 @@ fi
 #------------------------------
 ROOT_DIR=$dir_name
 
+## Export PATH
+#-------------
+export PATH=$(pwd):$PATH
+
 # Building the Prelude 
-#--------------------------------------
-mkdir "$ROOT_DIR/output"
-LAST_ERROR_CODE=$0
+#---------------------
 
-# checking for error with creating the output directory
-#------------------------------------------------------
-if [[ $LAST_EXIT_CODE != 0 ]]
+# 1. The output directory 
+#------------------------
+if [[ -d "$ROOT_DIR/output" ]]
 then 
-    if [[ -d "$ROOT_DIR/output" ]]
-    then
-        rm -r $ROOT_DIR/output
-        mkdir "$ROOT_DIR/output"
-        LAST_ERROR_CODE=$0
-
-        if [[ $LAST_EXIT_CODE != 0 ]]
-        then 
-            echo "ERROR: $(date -u): Failed with the following error: $LAST_EXIT_CODE while creating a directory to store the results" 
-            exit $LAST_EXIT_CODE # return the same exit code as the failed process 
-        fi 
-    else
-    echo "ERROR: $(date -u): Failed with the following error: $LAST_EXIT_CODE while creating a directory to store the results" 
-    exit $LAST_EXIT_CODE # return the same exit code as the failed process 
-    fi 
+    rm -r "$ROOT_DIR/output"
+    mkdir "$ROOT_DIR/output"
+else
+    mkdir "$ROOT_DIR/output"
 fi 
 
-mkdir "$ROOT_DIR/stat"
-LAST_ERROR_CODE=$0
-
-# hecking for error with creating the stat directory
-#---------------------------------------------------
-if [[ $LAST_EXIT_CODE != 0 ]]
+# 2. The output directory 
+#------------------------
+if [[ -d "$ROOT_DIR/stat" ]]
 then 
-    if [[ -d "$ROOT_DIR/stat" ]]
-    then
-        rm -r "$ROOT_DIR/stat"
-        mkdir "$ROOT_DIR/stat"
-        LAST_ERROR_CODE=$0
-
-        if [[ $LAST_EXIT_CODE != 0 ]]
-        then 
-            echo "ERROR: $(date -u): Failed with the following error: $LAST_EXIT_CODE while creating a directory to store the logs and progress lines" 
-            exit $LAST_EXIT_CODE # return the same exit code as the failed process 
-        fi 
-    else
-    echo "ERROR: $(date -u): Failed with the following error: $LAST_EXIT_CODE while creating a directory to store the logs and progress lines" 
-    exit $LAST_EXIT_CODE # return the same exit code as the failed process 
-    fi  
+    rm -r "$ROOT_DIR/stat"
+    mkdir "$ROOT_DIR/stat"
+else 
+    mkdir "$ROOT_DIR/stat"
 fi 
-
 # 2. check that the logic of input command line is valid and set th execution Route
 #----------------------------------------------------------------------------------
 if [ -f "$dir_name/$standard_input" ] # IF Standard input is defined then it has the highest precedence and we are executing using first execution route
@@ -152,9 +128,96 @@ then
     ROUTE=1
 elif [[ -f "$dir_name/$genotype_table" ]] && [[ -f "$dir_name/$fasta_file" ]] # if a fasta file and a genotypte table are defined then we are going down the second execution route 
 then
+    ## UNZIP THE GENOTYPE TABLE
+    #--------------------------
+    if [[ $dir_name/$genotype_table == *.gz ]]
+    then 
+        gunzip $dir_name/$genotype_table
+
+        # Check that the unzipping has finished correctly
+        #------------------------------------------------ 
+        
+        LAST_ERROR_CODE=$?     
+        if [ $LAST_EXIT_CODE != 0 ]
+        then 
+            echo "ERROR:: $(date -u): Your input genotype table has a .gz extention but unzipping it failed with the following error code: $LAST_ERROR_CODE" 2>> "$ROOT_DIR/stat/run.error" 
+            exit 1
+        fi 
+
+        # update the genotype file name to contain the results without the .gz extension 
+        #-------------------------------------------------------------------------------
+        genotype_table=$(echo $genotype_table | cut -d '.' -f 1,2)
+    fi
+
+    ## UNZIP THE FASTA FILE 
+    #----------------------
+    if [[ $dir_name/$fasta_file == *.gz ]]
+    then 
+        gunzip $dir_name/$fasta_file
+
+        # Check that the unzipping has finished correctly
+        #------------------------------------------------ 
+        
+        LAST_ERROR_CODE=$?     
+        if [ $LAST_EXIT_CODE != 0 ]
+        then 
+            echo "ERROR:: $(date -u): Your input FASTA file has a .gz extention but unzipping it failed with the following error code: $LAST_ERROR_CODE" 2>> "$ROOT_DIR/stat/run.error" 
+            exit 1
+        fi 
+
+        # update the genotype file name to contain the results without the .gz extension 
+        #-------------------------------------------------------------------------------
+        fasta_file=$(echo $fasta_file | cut -d '.' -f 1,2) 
+    fi 
+    ## SET EXECUTION the ROUTE
+    #-------------------------
     ROUTE=2
 elif [[ -f "$dir_name/$vcf_file" ]] && [[ -f "$dir_name/$fasta_file" ]]
 then 
+    ## UNZIP THE GENOTYPE TABLE
+    #--------------------------
+    if [[ "$dir_name/$vcf_file" == *.gz ]]
+    then 
+        gunzip $dir_name/$vcf_file
+
+        # Check that the unzipping has finished correctly
+        #------------------------------------------------ 
+        
+        LAST_EXIT_CODE=$?     
+        if [[ $LAST_EXIT_CODE != 0 ]]
+        then 
+            echo "ERROR:: $(date -u): Your input VCF file has a .gz extention but unzipping it failed with the following error code: $LAST_ERROR_CODE" 2>> "$ROOT_DIR/stat/run.error" 
+            exit 1
+        fi 
+
+        # update the genotype file name to contain the results without the .gz extension 
+        #-------------------------------------------------------------------------------
+        vcf_file=$(echo $vcf_file | cut -d '.' -f 1,2) 
+    fi
+
+    ## UNZIP THE FASTA FILE 
+    #----------------------
+    if [[ "$dir_name/$fasta_file" == *.gz ]]
+    then 
+        gunzip $dir_name/$fasta_file
+
+        # Check that the unzipping has finished correctly
+        #------------------------------------------------ 
+        
+        LAST_ERROR_CODE=$?     
+        if [[ $LAST_EXIT_CODE != 0 ]]
+        then 
+            echo "ERROR:: $(date -u): Your input FASTA file has a .gz extention but unzipping it failed with the following error code: $LAST_ERROR_CODE" 2>> "$ROOT_DIR/stat/run.error" 
+            exit 1
+        fi 
+
+        # update the genotype file name to contain the results without the .gz extension 
+        #-------------------------------------------------------------------------------
+        fasta_file=$(echo $fasta_file | cut -d '.' -f 1,2) 
+    fi 
+
+    ## SET EXECUTION the ROUTE
+    #-------------------------
     ROUTE=3
 elif [[ -f "$dir_name/$fasta_file" ]]
 then
@@ -176,7 +239,7 @@ then
     # Check the list of alleles
     if ! [[ -f "$dir_name/$list_allele" ]]
     then 
-        echo "ERROR: $(date -u): Unmet requriment for running execution pipeline number $ROUTE. List of alleles has not been provide (-a), provide the list of alleles and try again." 2>> "$dir_name/run.log"
+        echo "ERROR: $(date -u): Unmet requriment for running execution pipeline number $ROUTE. List of alleles has not been provide (-a), provide the list of alleles and try again." 2>> "$ROOT_DIR/output/run.log"
         exit -1;
     fi 
     # Check the window size and set the default value
@@ -198,10 +261,10 @@ then
         step_size=1
     fi
     # create a working directory for this route  
-    mkdir -p "$dir_name/temp_work/creating_protein_sequences/" 
+    mkdir -p "$ROOT_DIR/temp_work/creating_protein_sequences/" 
     if [ $? != 0 ]
     then 
-        echo "Error Creating a directory for protein sequence generation at : $dir_name/temp_work/creating_protein_sequences/ . " 2>> "$ROOT_DIR/stat/run.error"
+        echo "Error Creating a directory for protein sequence generation at : $ROOT_DIR/temp_work/creating_protein_sequences/ . " 2>> "$ROOT_DIR/stat/run.error"
         exit 3
     fi 
 fi 
@@ -214,13 +277,12 @@ cd $dir_name
 #-----------------------------------------
 if [ $ROUTE == 1 ]
 then 
-    echo "INFO:: $(date -u): Starting the prediction with a file containing $( wc -l $standard_input)" >> "$ROOT_DIR/stat/run.error"
+    echo "INFO:: $(date -u): Starting the prediction with a file containing $( wc -l $standard_input)" >> "stat/run.error"
     prediction_engine_portal.py --base_dir "." \
     --input $standard_input --model_index $model_index\
     --output_path "./output/prediction_results.tsv"\
-    --unmapped_results "./output/unmapped_results.tsv" >> "$ROOT_DIR/output/run.log" 2>> "$ROOT_DIR/stat/run.error"
-    echo "INFO:: $(date -u): Execution finished." >> "$ROOT_DIR/stat/run.error"
-    rm -r "temp_work/creating_protein_sequences/" 
+    --unmapped_results "./output/unmapped_results.tsv" >> "output/run.log" 2>> "stat/run.error"
+    echo "INFO:: $(date -u): Execution finished." >> "output/run.log"
     exit 0
 
 elif [ $ROUTE == 2 ]
@@ -228,12 +290,12 @@ then
     # 1. Generating a protein sequence from mutation data
     Mut2Prot.py --input_table $genotype_table \
     --input_fasta $fasta_file --results_path "temp_work/creating_protein_sequences/fragmented_protein_sequences_precursor.tsv" \
-    >> "$ROOT_DIR/output/run.log" 2>> "$ROOT_DIR/stat/run.error" 
+    >> "output/run.log" 2>> "stat/run.error" 
 
     let LAST_EXIT_CODE=$?
     if [ $LAST_EXIT_CODE != 0 ]
     then 
-        echo "ERROR: $(date -u): Running Mut2Prot failed with the following error code: $LAST_EXIT_CODE" 2>> "$ROOT_DIR/stat/run.error"
+        echo "ERROR: $(date -u): Running Mut2Prot failed with the following error code: $LAST_EXIT_CODE" 2>> "stat/run.error"
         rm -r "temp_work/creating_protein_sequences/" 
         exit $LAST_EXIT_CODE # return the same exit code as the failed process 
     fi 
@@ -244,7 +306,7 @@ then
     let LAST_EXIT_CODE=$?
     if [ $LAST_EXIT_CODE != 0 ]
     then 
-        echo "ERROR: $(date -u): Cleaning the generated file failed with the following line of code: $LAST_EXIT_CODE" 2>> "$ROOT_DIR/stat/run.error"
+        echo "ERROR: $(date -u): Cleaning the generated file failed with the following line of code: $LAST_EXIT_CODE" 2>> "stat/run.error"
         rm -r "temp_work/creating_protein_sequences/"
         exit $LAST_EXIT_CODE # return the same exit code as the failed process 
     fi 
@@ -263,12 +325,12 @@ then
     # 2. Generate perfonalized protein sequences
         # 1.b running predictions 
     vcf2prot --vcf_file $vcf_file --fasta_ref $fasta_file -v -g mt -o "temp_work/creating_protein_sequences/personalized_sequences" \
-        >> "$ROOT_DIR/output/run.log" 2>> "$ROOT_DIR/stat/run.error" 
+        >> "output/run.log" 2>> "stat/run.error" 
     
     let LAST_EXIT_CODE=$?
     if [ $LAST_EXIT_CODE != 0 ]
     then 
-        echo "ERROR: $(date -u): Running vcf2prot failed with the following error code: $LAST_EXIT_CODE" 2>> "$ROOT_DIR/stat/run.error"
+        echo "ERROR: $(date -u): Running vcf2prot failed with the following error code: $LAST_EXIT_CODE" 2>> "stat/run.error"
         rm -r "temp_work/creating_protein_sequences/"
         exit $LAST_EXIT_CODE # return the same exit code as the failed process 
     fi      
@@ -278,7 +340,7 @@ then
     --results_path "temp_work/creating_protein_sequences/fragmented_protein_sequences.tsv"\
     --window_size $window_size \
     --step_size $step_size \
-    >> "$ROOT_DIR/output/run.log" 2>> "$ROOT_DIR/stat/run.error"
+    >> "output/run.log" 2>> "stat/run.error"
 
     # 2. check that the fragmentation went with out problems  
     let LAST_EXIT_CODE=$?
@@ -295,14 +357,14 @@ then
     fragmentor.py --input_fasta_file $fasta_file \
     --results_path "temp_work/creating_protein_sequences/fragmented_protein_sequences.tsv" \
     --window_size $window_size --step_size $step_size \
-    >> "$ROOT_DIR/output/run.log" 2>> "$ROOT_DIR/stat/run.error"
+    >> "output/run.log" 2>> "stat/run.error"
 
     # Correct reading errors
     #-----------------------
     let LAST_EXIT_CODE=$?
     if [ $LAST_EXIT_CODE != 0 ]
     then 
-        echo "ERROR: $(date -u): Running fragmentor.py failed with the following error code: $LAST_EXIT_CODE" 2>> "$ROOT_DIR/stat/run.error"
+        echo "ERROR: $(date -u): Running fragmentor.py failed with the following error code: $LAST_EXIT_CODE" 2>> "stat/run.error"
         rm -r "temp_work/creating_protein_sequences/"
         exit $LAST_EXIT_CODE # return the same exit code as the failed process 
     fi 
@@ -311,14 +373,14 @@ fi
 #----------------------------------------
 # 3. Read the list of alleles and standrdize the names 
 allele2standard.py --input_table $list_allele --output_table "temp_work/creating_protein_sequences/allele_names_stabdardized.tsv" \
-    >> "$ROOT_DIR/output/run.log" 2>> "$ROOT_DIR/stat/run.error"
+    >> "output/run.log" 2>> "stat/run.error"
 
 # Correct reading errors
 #-----------------------
 let LAST_EXIT_CODE=$?
 if [ $LAST_EXIT_CODE != 0 ]
 then 
-    echo "ERROR: $(date -u): Running Allele2standard failed with the following error code: $LAST_EXIT_CODE" 2>> "$ROOT_DIR/stat/run.error"
+    echo "ERROR: $(date -u): Running Allele2standard failed with the following error code: $LAST_EXIT_CODE" 2>> "stat/run.error"
     rm -r "temp_work/creating_protein_sequences/"
     exit $LAST_EXIT_CODE # return the same exit code as the failed process 
 fi 
@@ -329,14 +391,14 @@ fi
 Mixer.py --standardized_allele_name "temp_work/creating_protein_sequences/allele_names_stabdardized.tsv"\
     --input_peptide "temp_work/creating_protein_sequences/fragmented_protein_sequences.tsv" \
     --results_path "temp_work/creating_protein_sequences/input_to_the_prediction_engine.tsv" \
-   >> "$ROOT_DIR/output/run.log" 2>> "$ROOT_DIR/stat/run.error" 
+   >> "output/run.log" 2>> "stat/run.error" 
 
 # Checking for error and exit upon finding any
 #---------------------------------------------
 let LAST_EXIT_CODE=$?
 if [ $LAST_EXIT_CODE != 0 ]
 then 
-    echo "ERROR: $(date -u): Running Mixer.py failed with the following error code: $LAST_EXIT_CODE" 2>> "$ROOT_DIR/stat/run.error"
+    echo "ERROR: $(date -u): Running Mixer.py failed with the following error code: $LAST_EXIT_CODE" 2>> "stat/run.error"
     exit $LAST_EXIT_CODE # return the same exit code as the failed process 
 fi 
 
@@ -345,17 +407,17 @@ fi
 prediction_engine_portal.py --base_dir "." \
     --input "temp_work/creating_protein_sequences/input_to_the_prediction_engine.tsv"\
     --model_index $model_index \
-    --output_path "../output/prediction_results.tsv" \
-    --unmapped_results "../output/unmapped_results.tsv" \
+    --output_path "output/prediction_results.tsv" \
+    --unmapped_results "output/unmapped_results.tsv" \
     --tissue $tissue_name \
-    >> "$ROOT_DIR/output/run.log" 2>> "$ROOT_DIR/stat/run.error"
+    >> "output/run.log" 2>> "stat/run.error"
 
 # check for error and exit upon finding any
 #------------------------------------------
 let LAST_EXIT_CODE=$?
 if [ $LAST_EXIT_CODE != 0 ]
 then 
-    echo "ERROR: $(date -u): Running prediction_engine_portal.py failed with the following error code: $LAST_EXIT_CODE " 2>> "$ROOT_DIR/stat/run.error"
+    echo "ERROR: $(date -u): Running prediction_engine_portal.py failed with the following error code: $LAST_EXIT_CODE " 2>> "stat/run.error"
     rm -r "temp_work/creating_protein_sequences/"
     exit $LAST_EXIT_CODE # return the same exit code as the failed process 
 fi
@@ -363,9 +425,7 @@ fi
 # 7. clean up the temp directory
 rm -r temp_work/creating_protein_sequences/
 rm -r temp_work/
-rm -r ./output/
 
-echo "INFO:: $(date -u): Exectuion finish" >> "$ROOT_DIR/output/run.log"
-# call PIA-inference wrapper engine 
-#----------------------------------
-
+echo "INFO:: $(date -u): Exectuion finish" >> "output/run.log"
+# END EXECUTION 
+#--------------
