@@ -150,7 +150,28 @@ conda activate pia_inf
 
 #### Note
 
-After you install the libraries either with pip or conda, installing OmLIT is a prerequisite before launching the pipeline installation details are available [here](https://github.com/ikmb/OmLiT)
+1. After you install the libraries either with pip or conda, installing OmLIT is a prerequisite before launching the pipeline installation details are available [here](https://github.com/ikmb/OmLiT)
+
+2. Make sure you downloaded the data and the models associated with this version of the pipeline from **releases**
+
+3. unpack the models and the assets as follow
+
+```bash
+
+# Note: at the current stage commit the release version is v0.1.1, VERSION shall be 0.1.1
+
+# 1. unpack the models 
+tar -xvzf "models_version_${VERSION}_.tar.gz"
+
+# 2. unpack the assets 
+tar -xvzf assets.tar.gz 
+
+# 3. move the models to assets 
+
+mv "models_version_${VERSION}/*h5" assets
+
+# 4. export the Path to assets as described below
+```
 
 ## Export the Paths
 
