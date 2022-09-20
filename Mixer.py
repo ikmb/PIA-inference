@@ -39,35 +39,35 @@ def parse_user_inputs()->Dict[str,str]:
     #--------------
     # Load input genetic table and check for correctness 
     if args.input_peptides=='?':
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The input list of peptides has not been provided.\n')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: The input list of peptides has not been provided.\n")
         sys.exit(-1)
     try:
         dev_read=pd.read_csv(args.input_peptides,nrows=10,sep='\t')
     except Exception as exp:
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: Reading the input genetic table provided at: {args.input_peptides}\
-             risen the following exception: {str(exp)}')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: Reading the input genetic table provided at: {args.input_peptides}\
+             risen the following exception: {str(exp)}")
         sys.exit(-1)
     if dev_read.shape[1] != 2:
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: Incorrect table provided at: {args.input_peptides}\
-             expect number of columns is 2. However, your input has : {dev_read.shape[1]} columns')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: Incorrect table provided at: {args.input_peptides}\
+             expect number of columns is 2. However, your input has : {dev_read.shape[1]} columns")
         sys.exit(-1)
     
     # Load the list of alleles
     #-------------------------
     if args.standardized_allele_name=='?':
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The list of alleles has not been provided.\n')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: The list of alleles has not been provided.\n")
         sys.exit(-1)
     if not os.path.exists(args.standardized_allele_name):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The path to the list of alleles: {args.input_peptides} has not been provided.')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: The path to the list of alleles: {args.input_peptides} has not been provided.")
         sys.exit(-1)
     ## check the output is path is valid
     #-----------------------------------
     if not os.path.exists(os.path.dirname(args.results_path)):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The base to write the results:\
-             {os.path.dirname(args.results_path)} does not exists.')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: The base to write the results:\
+             {os.path.dirname(args.results_path)} does not exists.")
         sys.exit(-1)
     if not os.access(os.path.dirname(args.results_path), os.W_OK):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: you (i.e. user: {os.login()} ) do not have writting access at the results path: {os.path.dirname(args.results_path)}\n')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: you (i.e. user: {os.login()} ) do not have writting access at the results path: {os.path.dirname(args.results_path)}\n")
         sys.exit(-1)
     ## return the results
     #--------------------
@@ -94,7 +94,7 @@ def mix_inputs(path2pep:str, path2alleles:str)->pd.DataFrame:
     # allocate the results table
     result_df=pd.DataFrame(columns=list(peptides.columns)+['allele'])
     # repeat the table for each input allele
-    for allele in tqdm(alleles.iloc[:,0].to_list()):
+    for allele in alleles.iloc[:,0].to_list():
         temp_ds=peptides.copy(deep=True)
         temp_ds['allele']=[allele]*temp_ds.shape[0]
         # append the results to the table 

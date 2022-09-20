@@ -44,43 +44,43 @@ def parse_argument()->Dict[str,Any]:
     # Check the validity of the input table
     #-------------------------------------- 
     if args.input_table=='?':
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The input genetic table has not been provided.\n')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: The input genetic table has not been provided.\n")
         sys.exit(-1)
     if not os.path.exists(args.input_table):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The path to the input table: {args.input_table} has not been provided.')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: The path to the input table: {args.input_table} has not been provided.")
         sys.exit(-1)
     try:
         dev_read=pd.read_csv(args.input_table,nrows=10,sep='\t')
     except Exception as exp:
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: Reading the input table provided at: {args.input_table}\
-             risen the following exception: {str(exp)}')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: Reading the input table provided at: {args.input_table}\
+             risen the following exception: {str(exp)}")
         sys.exit(-1)
     if dev_read.shape[1] not in [2,3]:
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: Incorrect table provided at: {args.input_table}\
-             expect number of columns to 2 or 3 columns. However, your input has : {dev_read.shape[1]} columns')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: Incorrect table provided at: {args.input_table}\
+             expect number of columns to 2 or 3 columns. However, your input has : {dev_read.shape[1]} columns")
         sys.exit(-1)
     # Check the validity of the resulting input FASTA files
     #-------------------------------------------------------
     if args.input_fasta == '?':
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The input FASTA has not been provided.\n')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: The input FASTA has not been provided.\n")
         sys.exit(-1)
     if not os.path.exists(args.input_table):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The path to the input FASTA file: {args.input_table} has not been provided.')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: The path to the input FASTA file: {args.input_table} has not been provided.")
         sys.exit(-1)
     # Check that we have access write at the resulting directory
     #-----------------------------------------------------------
     if not os.path.exists(os.path.dirname(args.results_path)):
         print(f"Base dir is: {os.path.dirname(args.results_path)}, Does it exist: {os.path.exists(os.path.dirname(args.results_path))}")
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The base to write the write the results:\
-             {os.path.dirname(args.results_path)} does not exists.')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: The base to write the write the results:\
+             {os.path.dirname(args.results_path)} does not exists.")
         sys.exit(-1)
     if not os.access(os.path.dirname(args.results_path), os.W_OK):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: you (i.e. user: {os.login()} ) do not have writing access at the results path: {os.path.dirname(args.results_path)}\n')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: you (i.e. user: {os.login()} ) do not have writing access at the results path: {os.path.dirname(args.results_path)}\n")
         sys.exit(-1)
     # check the value of the window size
     #-----------------------------------  
     if args.window_size not in range(9,22):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The provided window size is not in range, only values between 9 and 21 are supported.')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: The provided window size is not in range, only values between 9 and 21 are supported.")
         sys.exit(-1)
     ## return the results
     #--------------------
@@ -125,11 +125,11 @@ def generate_personalized_proteins(proteome:Dict[str,str],path2gentic_table:str,
     generated_results=pd.DataFrame(columns=['peptide_sequence','peptide_index','Pheno'])
     # loop over all the elements in the input table
     #----------------------------------------------
-    for row in tqdm(genetic_table.itertuples()):
+    for row in genetic_table.itertuples():
         try: 
             protein_seq=proteome[row.name]
         except Exception as exp:
-            sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encountered the following problem: The sequence of protein {row.name} is not defined the input proteome.')
+            sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encountered the following problem: The sequence of protein {row.name} is not defined the input proteome.")
             sys.exit(1)
         # obtain the peptides and name
         mutated_peptides=apply_genetic_variant(row.genetic_variant, protein_seq, row.name, window_size)
@@ -181,10 +181,10 @@ def apply_genetic_variant(genetic_mutation:str, protein_sequence:str, protein_na
     try:
         _, position, altered_aa = parse_genetic_code(genetic_mutation)
     except Exception as exp:
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: parsing the following genetic code: {genetic_mutation} gave rise to the following exception: {str(exp)}.')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encounterred the following problem: parsing the following genetic code: {genetic_mutation} gave rise to the following exception: {str(exp)}.")
         sys.exit(1)
     if position > len(protein_sequence):
-        sys.stderr.write(f'ERROR: {time.ctime()}: I {sys.argv[0]} encounterred the following problem: the position of the mutation: {position} is longer than protein: {protein_name} length: {len(protein_sequence)}.')
+        sys.stderr.write(f"ERROR: {time.ctime()}: I {sys.argv[0].split('/')[-1]} encounterred the following problem: the position of the mutation: {position} is longer than protein: {protein_name} length: {len(protein_sequence)}.")
         sys.exit(1)
     # extract the upper and lower bound for fragmentation
     #----------------------------------------------------
@@ -226,4 +226,5 @@ if __name__=='__main__':
     user_argument=parse_argument()
     protein_sequences=load_fasta_sequence(user_argument['input_fasta'])
     generated_personalized_sequences=generate_personalized_proteins(protein_sequences,user_argument['genetic_table'],user_argument['window_size'])
+    os.umask(0o002)
     generated_personalized_sequences.to_csv(user_argument['results_path'],sep='\t',index=False)
